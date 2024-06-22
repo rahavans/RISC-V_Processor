@@ -56,14 +56,15 @@ always@(*) begin
             GPR[IR[11:7]] = GPR[IR[19:15]] >>> GPR[IR[24:20]]; // ARITHMETIC RIGHT SHIFT
         end
         else if(IR[14:12] == 3'b010 && IR[31:25] == 7'b0000000) begin
-            GPR[IR[11:7]] = (GPR[IR[19:15]] < GPR[IR[24:20]]) ? 1'b1:1'b0; // SET LESS THAN
+            GPR[IR[11:7]] = ($signed(GPR[IR[19:15]]) < $signed(GPR[IR[24:20]])) ? 1'b1 : 1'b0; // SET LESS THAN
         end 
         else if (IR[14:12] == 3'b011 && IR[31:25] == 7'b0000000) begin
-            GPR[IR[11:7]] = (GPR[IR[19:15]] < GPR[IR[24:20]]) ? 1'b1:1'b0; // SET LESS THAN UNSIGNED
+            GPR[IR[11:7]] = (GPR[IR[19:15]] < GPR[IR[24:20]]) ? 1'b1 : 1'b0; // SET LESS THAN UNSIGNED
         end
     end
     `I_type: begin
         GPR[5] = {{20{IR[31]}}, IR[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
+
         if(IR[14:12] == 3'b000) begin
             GPR[IR[11:7]] = (GPR[IR[19:15]] + GPR[5]); // ADDI
         end
@@ -75,6 +76,21 @@ always@(*) begin
         end
         else if(IR[14:12] == 3b'111) begin 
             GPR[IR[11:7]] = GPR[IR[19:15]] & GPR[5]; // ANDI
+        end
+        else if(IR[14:12] == 3b'001 && IR[31:25] == 7'b0000000) begin
+            GPR[IR[11:7]] = GPR[IR[19:15]] << IR[24:20]; // SLLI
+        end
+        else if(IR[14:12] == 3b'101 && IR[31:25] == 7'b0000000) begin
+            GPR[IR[11:7]] = GPR[IR[19:15]] >> IR[24:20]; // SRLI
+        end
+        else if(IR[14:12] == 3b'101 && IR[31:25] == 7'b0100000) begin
+            GPR[IR[11:7]] = GPR[IR[19:15]] >>> IR[24:20]; // SRAI
+        end
+        else if(IR[14:12] == 3b'010) begin
+            GPR[IR[11:7]] = ($signed(GPR[IR[19:15]]) < $signed(IR[24:20])) ? 1'b1 : 1'b0; // SLTI
+        end
+        else if(IR[14:12] == 3b'011) begin
+            GPR[IR[11:7]] = (GPR[IR[19:15]] < IR[24:20]) > 1'b1 : 1'b0; // SLTIU
         end
     end
     endcase

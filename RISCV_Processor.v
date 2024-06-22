@@ -72,10 +72,10 @@ always@(posedge clk) begin
     `R_type: begin
         if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0000000) begin
             execute_w_overflow <= GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]; // ADD
-            execute <= execute_w_overflow[31:0];
-            zero_flag <= (execute == 0);
-            carry_flag <= execute_w_overflow[32];
-            negative_flag <= execute[31];
+            execute <= ((GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]))[31:0];
+            zero_flag <= ((GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]) == 0);
+            carry_flag <= (GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]])[32];
+            negative_flag <= (GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]])[31];
             overflow_flag <= ((GPR[IR_decode[19:15]][31] == GPR[IR_decode[24:20]][31]) && (execute[31] != GPR[IR_decode[19:15]][31]));
         end 
         else if (IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0100000) begin
@@ -88,12 +88,18 @@ always@(posedge clk) begin
         end
         else if (IR_decode[14:12] == 3'b100 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]]; // XOR
+            zero_flag <= ((GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]]) == 0);
+            negative_flag <= (GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]])[31];
         end
         else if(IR_decode[14:12] == 3'b110 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]]; // OR
+            zero_flag <= ((GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]]) == 0);
+            negative_flag <= (GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]])[31];
         end
         else if(IR_decode[14:12] == 3'b111 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]]; // AND
+            zero_flag <= ((GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]]) == 0);
+            negative_flag <= (GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]])[31];
         end
         else if(IR_decode[14:12] == 3'b001 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] << GPR[IR_decode[24:20]]; // LEFT SHIFT

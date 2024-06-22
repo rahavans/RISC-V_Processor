@@ -1,28 +1,41 @@
 `timescale 1ns / 1ps
 
 `define opcode IR[6:0]
-`define R-type 7'b0110011 
-`define I-type 7'b0010011
-`define S-type 7'b0100011
-`define B-type 7'b1100011
-`define U-type 7'b0110111
-`define J-type 7'b1101111
+`define R_type 7'b0110011 
+`define I_type 7'b0010011
+`define S_type 7'b0100011
+`define B_type 7'b1100011
+`define U_type 7'b0110111
+`define J_type 7'b1101111
 `define load 7'b0000011
 
+/*
+R-type:  | funct7 | rs2 | rs1 | funct3 | rd | opcode |
+I-type:  | imm[11:0] | rs1 | funct3 | rd | opcode |
+S-type:  | imm[11:5] | rs2 | rs1 | funct3 | imm[4:0] | opcode |
+B-type:  | imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |
+U-type:  | imm[31:12] | rd | opcode |
+J-type:  | imm[20|10:1|11|19:12] | rd | opcode |
+*/
 
-module RISCV_Processor();
+module RISCV_Processor(
+    input clk,
+    input rst,
+    input [31:0] instruction,
+    output reg [31:0] GPR [31:0]
+);
 reg [31:0] IR;
 reg [31:0] GPR [31:0];
 
 
 always@(*) begin
     case(`opcode)
-    R-type: begin
+    `R_type: begin
         if(IR[14:12] == 3'b000 && IR[31:25] == 7'b0000000) begin
             GPR[IR[11:7]] = GPR[IR[19:15]] + GPR[IR[24:20]]; // ADD
         end 
         else if (IR[14:12] == 3'b000 && IR[31:25] == 7'b0100000) begin
-            GPR[IR[11:7]] = GPR[IR[19:15]] - GPR[IR[24:20]]; // SUB
+            GPR[IR[11:7]] = GPR[IR[19:15]] _ GPR[IR[24:20]]; // SUB
         end
         else if (IR[14:12] == 3'b100 && IR[31:25] == 7'b0000000) begin
             GPR[IR[11:7]] = GPR[IR[19:15]] ^ GPR[IR[24:20]]; // XOR
@@ -47,6 +60,21 @@ always@(*) begin
         end 
         else if (IR[14:12] == 3'b011 && IR[31:25] == 7'b0000000) begin
             GPR[IR[11:7]] = (GPR[IR[19:15]] < GPR[IR[24:20]]) ? 1'b1:1'b0; // SET LESS THAN UNSIGNED
+        end
+    end
+    `I_type: begin
+        GPR[5] = {{20{IR[31]}}, IR[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
+        if(IR[14:12] == 3'b000) begin
+            GPR[IR[11:7]] = (GPR[IR[19:15]] + GPR[5]); // ADDI
+        end
+        else if(IR[14:12] == 3b'100) begin
+            GPR[IR[11:7]] = (GPR[IR[19:15]] ^ GPR[5]); // XORI
+        end
+        else if(IR[14:12] == 3b'110) begin 
+            GPR[IR[11:7]] = (GPR[IR[19:15]] | GPR[5]); // ORI
+        end
+        else if(IR[14:12] == 3b'111) begin 
+            GPR[IR[11:7]] = GPR[IR[19:15]] & GPR[5]; // ANDI
         end
     end
     endcase

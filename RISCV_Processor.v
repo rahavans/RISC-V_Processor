@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 `define opcode IR_decode[6:0]
+`define opcode_pl IR_decode_pipelined[6:0]
 `define R_type 7'b0110011 
 `define I_type 7'b0010011
 `define S_type 7'b0100011
@@ -26,6 +27,9 @@ module RISCV_Processor(
 );
 reg [31:0] IR_fetch;
 reg [31:0] IR_decode;
+reg [31:0] IR_decode_pipelined; // pipelined to execute
+reg [31:0] IR_decode_pipelined_1; // pipelined to memory access
+reg [31:0] IR_decode_pipelined_2; // pipelined to writeback
 reg [31:0] execute;
 reg [31:0] mem_acess;
 reg [31:0] write_back;
@@ -38,6 +42,7 @@ always@(posedge clk) begin
         end
     IR_fetch <= {32{1'b0}};
     IR_decode <= {32{1'b0}};
+    IR_decode_pipelined <= {32{1'b0}};
     execute <= {32{1'b0}};
     mem_access <= {32{1'b0}};
     write_back <= {32{1'b0}};
@@ -45,6 +50,7 @@ always@(posedge clk) begin
         IR_fetch <= instruction;
         IR_decode <= IR_fetch;
     case(`opcode)
+    IR_decode_pipelined <= IR_decode;
     `R_type: begin
         if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]; // ADD
@@ -78,7 +84,7 @@ always@(posedge clk) begin
         end
     end
     `I_type: begin
-        GPR[5] = {{20{IR_decode[31]}}, IR_decode[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
+        GPR[5] <= {{20{IR_decode[31]}}, IR_decode[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
 
         if(IR_decode[14:12] == 3'b000) begin
             execute <= (GPR[IR_decode[19:15]] + GPR[5]); // ADDI
@@ -109,6 +115,7 @@ always@(posedge clk) begin
         end
     end
     endcase
+    if
 end
 end
 

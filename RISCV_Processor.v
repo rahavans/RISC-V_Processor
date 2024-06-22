@@ -31,21 +31,39 @@ reg [31:0] IR_decode_pipelined; // pipelined to execute
 reg [31:0] IR_decode_pipelined_1; // pipelined to memory access
 reg [31:0] IR_decode_pipelined_2; // pipelined to writeback
 reg [31:0] execute;
+reg [32:0] execute_w_overflow;
 reg [31:0] mem_acess;
 reg [31:0] write_back;
 
+reg zero_flag;
+reg negative_flag;
+reg carry_flag;
+reg overflow_flag;
+
+genvar i;
+generate
+    for(i = 0; i < 32; i = i + 1) begin
+        always @(posedge clk) begin
+            if(rst) begin
+                GPR[i] <= {32{1'b0}};
+            end
+        end
+    end
+endgenerate
 
 always@(posedge clk) begin
     if(rst) begin
-        for(int i = 0; i < 32; i = i + 1) begin
-            GPR[i] <= {32{1'b0}};
-        end
-    IR_fetch <= {32{1'b0}};
-    IR_decode <= {32{1'b0}};
-    IR_decode_pipelined <= {32{1'b0}};
-    execute <= {32{1'b0}};
-    mem_access <= {32{1'b0}};
-    write_back <= {32{1'b0}};
+        IR_fetch <= {32{1'b0}};
+        IR_decode <= {32{1'b0}};
+        IR_decode_pipelined <= {32{1'b0}};
+        execute <= {32{1'b0}};
+        execute_w_overflow <= {33{1'b0}};
+        mem_access <= {32{1'b0}};
+        write_back <= {32{1'b0}};
+        zero_flag <= 1'b0;
+        negative_flag <= 1'b0;
+        carry_flag <= 1'b0;
+        overflow_flag <= 1'b0;
     end else begin
         IR_fetch <= instruction;
         IR_decode <= IR_fetch;
@@ -53,10 +71,20 @@ always@(posedge clk) begin
     IR_decode_pipelined <= IR_decode;
     `R_type: begin
         if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0000000) begin
-            execute <= GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]; // ADD
+            execute_w_overflow <= GPR[IR_decode[19:15]] + GPR[IR_decode[24:20]]; // ADD
+            execute <= execute_w_overflow[31:0];
+            zero_flag <= (execute == 0);
+            carry_flag <= execute_w_overflow[32];
+            negative_flag <= execute[31];
+            overflow_flag <= ((GPR[IR_decode[19:15]][31] == GPR[IR_decode[24:20]][31]) && (execute[31] != GPR[IR_decode[19:15]][31]));
         end 
         else if (IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0100000) begin
-            execute <= GPR[IR_decode[19:15]] _ GPR[IR_decode[24:20]]; // SUB
+            execute_w_overflow <= GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]; // ADD
+            execute <= (GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]])[31:0];
+            zero_flag <= ((GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]) == 0);
+            carry_flag <= ((GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]))[32];
+            negative_flag <= (GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]])[31];
+            overflow_flag <= ((GPR[IR_decode[19:15]][31] == GPR[IR_decode[24:20]][31]) && (execute[31] != GPR[IR_decode[19:15]][31]));
         end
         else if (IR_decode[14:12] == 3'b100 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]]; // XOR

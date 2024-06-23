@@ -91,37 +91,57 @@ always@(posedge clk) begin
             execute <= GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]]; // XOR
             zero_flag <= ((GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] ^ GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b110 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]]; // OR
             zero_flag <= ((GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] | GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b111 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]]; // AND
             zero_flag <= ((GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] & GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b001 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] << GPR[IR_decode[24:20]]; // LEFT SHIFT
             zero_flag <= ((GPR[IR_decode[19:15]] << GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] << GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] >> GPR[IR_decode[24:20]]; // RIGHT SHIFT
             zero_flag <= ((GPR[IR_decode[19:15]] >> GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] >> GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0100000) begin
             execute <= GPR[IR_decode[19:15]] >>> GPR[IR_decode[24:20]]; // ARITHMETIC RIGHT SHIFT
             zero_flag <= ((GPR[IR_decode[19:15]] >>> GPR[IR_decode[24:20]]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] >>> GPR[IR_decode[24:20]])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3'b010 && IR_decode[31:25] == 7'b0000000) begin
             execute <= ($signed(GPR[IR_decode[19:15]]) < $signed(GPR[IR_decode[24:20]])) ? 1 : 0; // SET LESS THAN
+            zero_flag <= 1'b0;
+            negative_flag <= 1'b0;
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end 
         else if (IR_decode[14:12] == 3'b011 && IR_decode[31:25] == 7'b0000000) begin
             execute <= (GPR[IR_decode[19:15]] < GPR[IR_decode[24:20]]) ? 1 : 0; // SET LESS THAN UNSIGNED
+            zero_flag <= 1'b0;
+            negative_flag <= 1'b0;
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
     end
     `I_type: begin
@@ -137,37 +157,57 @@ always@(posedge clk) begin
             execute <= (GPR[IR_decode[19:15]] ^ GPR[5]); // XORI
             zero_flag <= ((GPR[IR_decode[19:15]] ^ GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] ^ GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'110) begin 
             execute <= (GPR[IR_decode[19:15]] | GPR[5]); // ORI
             zero_flag <= ((GPR[IR_decode[19:15]] | GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] | GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'111) begin 
             execute <= GPR[IR_decode[19:15]] & GPR[5]; // ANDI
             zero_flag <= ((GPR[IR_decode[19:15]] & GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] & GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'001 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] << IR_decode[24:20]; // SLLI
             zero_flag <= ((GPR[IR_decode[19:15]] << GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] << GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'101 && IR_decode[31:25] == 7'b0000000) begin
             execute <= GPR[IR_decode[19:15]] >> IR_decode[24:20]; // SRLI
             zero_flag <= ((GPR[IR_decode[19:15]] >> GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] >> GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'101 && IR_decode[31:25] == 7'b0100000) begin
             execute <= GPR[IR_decode[19:15]] >>> IR_decode[24:20]; // SRAI
             zero_flag <= ((GPR[IR_decode[19:15]] >>> GPR[5]) == 0);
             negative_flag <= (GPR[IR_decode[19:15]] >>> GPR[5])[31];
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'010) begin
             execute <= ($signed(GPR[IR_decode[19:15]]) < $signed(GPR[5])) ? 1 : 0; // SLTI
+            zero_flag <= 1'b0;
+            negative_flag <= 1'b0;
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
         else if(IR_decode[14:12] == 3b'011) begin
             execute <= (GPR[IR_decode[19:15]] < GPR[5]) ? 1 : 0; // SLTIU
+            zero_flag <= 1'b0;
+            negative_flag <= 1'b0;
+            carry_flag <= 1'b0;
+            overflow_flag <= 1'b0;
         end
     end
     endcase

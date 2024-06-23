@@ -35,10 +35,14 @@ reg [32:0] execute_w_overflow;
 reg [31:0] mem_acess;
 reg [31:0] write_back;
 
+reg [31:0] program_mem [31:0];
+reg [31:0] data_mem [31:0];
+
 reg zero_flag;
 reg negative_flag;
 reg carry_flag;
 reg overflow_flag;
+reg read_flag;
 
 genvar i;
 generate
@@ -50,6 +54,34 @@ generate
         end
     end
 endgenerate
+
+always(@posedge clk) begin
+    if(rst) begin
+        read_flag <= 1'b0;
+    end else begin
+        if(read_flag == 1'b0) begin
+        $readmemb("File path for a .mem file that contains 32 instructions", program_mem);
+        // using $readmemb only for proof of functionality, in reality, would need to connect external controller for synthesis purposes
+        end
+        read_flag <= 1'b1;
+    end
+end
+
+always@(posedge clk) begin
+    if(rst) begin
+        count <= 0;
+        PC <= 0;
+    end else begin
+        if(read_flag == 1'b1) begin
+        if(count < 4) begin
+            count <= count + 1; // delay
+        end else begin
+            count <= 0;
+            PC <= PC + 4;
+        end
+    end
+    end
+end
 
 always@(posedge clk) begin
     if(rst) begin
@@ -65,7 +97,8 @@ always@(posedge clk) begin
         carry_flag <= 1'b0;
         overflow_flag <= 1'b0;
     end else begin
-        IR_fetch <= instruction;
+    if(read_flag == 1'b1) begin
+        IR_fetch <= program_mem[PC >> 2];
         IR_decode <= IR_fetch;
         GPR[5] <= {{20{IR_fetch[31]}}, IR_fetch[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
     case(`opcode)
@@ -80,7 +113,7 @@ always@(posedge clk) begin
             overflow_flag <= ((GPR[IR_decode[19:15]][31] == GPR[IR_decode[24:20]][31]) && (execute[31] != GPR[IR_decode[19:15]][31]));
         end 
         else if (IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0100000) begin
-            execute_w_overflow <= GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]; // ADD
+            execute_w_overflow <= GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]; // SUB
             execute <= (GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]])[31:0];
             zero_flag <= ((GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]) == 0);
             carry_flag <= ((GPR[IR_decode[19:15]] - GPR[IR_decode[24:20]]))[32];
@@ -210,9 +243,25 @@ always@(posedge clk) begin
             overflow_flag <= 1'b0;
         end
     end
+    `S_type: begin
+        if(IR_decode[14:12] == 3b'000) begin
+            data_mem[GPR[IR_decode[19:15]] + {20'b0, GPR[IR_decode[31:25]], GPR[IR_decode[11:7]]}][7:0] <= GPR[IR_decode[24:20]][7:0]; // SB
+        end
+        else if(IR_decode[14:12] == 3b'001) begin
+            data_mem[GPR[IR_decode[19:15]] + {20'b0, GPR[IR_decode[31:25]], GPR[IR_decode[11:7]]}][15:0] <= GPR[IR_decode[24:20]][15:0]; // SH
+        end
+        else if(IR_decode[14:12] == 3b'010) begin
+            data_mem[GPR[IR_decode[19:15]] + {20'b0, GPR[IR_decode[31:25]], GPR[IR_decode[11:7]]}][31:0] <= GPR[IR_decode[24:20]][31:0]; // SW
+        end
+    end
+    `B_type: begin
+        if(IR_decode[14:12] == 3'b000) begin
+            (GPR[IR_decode[19:15]] == GPR[IR_decode[24:20]]) ? PC <= PC + {20'b0, GPR[IR_decode[31:25]], GPR[IR_decode[11:7]]} : PC <= PC; // BEQ
+        end
+    end
     endcase
-    if
-end
+    end
+    end
 end
 
 endmodule

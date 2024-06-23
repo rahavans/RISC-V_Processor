@@ -6,7 +6,8 @@
 `define I_type 7'b0010011
 `define S_type 7'b0100011
 `define B_type 7'b1100011
-`define U_type 7'b0110111
+`define LUI 7'b0110111
+`define AUIPC 7'b0010111
 `define J_type 7'b1101111
 `define load 7'b0000011
 
@@ -275,8 +276,11 @@ always@(posedge clk) begin
             ($unsigned(GPR[IR_decode[19:15]]) >= $unsigned(GPR[IR_decode[24:20]])) ? PC <= PC + ({20'b0, GPR[IR_decode[31:25]], GPR[IR_decode[11:7]]}) : PC <= PC; // BGEU
         end
     end
-    `U_type: begin
-
+    `LUI: begin
+        execute <= GPR[IR_decode[31:12]] << 12;
+    end
+    `AUIPC: begin
+        PC <= PC + (GPR[IR_decode[31:12]] << 12);
     end
     endcase
     end

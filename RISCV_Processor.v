@@ -101,7 +101,7 @@ always@(posedge clk) begin
         overflow_flag <= 1'b0;
     end else begin
     if(read_flag == 1'b1) begin
-        IR_fetch <= program_mem[PC << 2];
+        IR_fetch <= program_mem[PC >> 2];
         IR_decode <= IR_fetch;
         GPR[5] <= {{20{IR_fetch[31]}}, IR_fetch[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER for I-type
         GPR[6] <= {11{IR_fetch[31]}, IR_fetch[31], IR_fetch[19:12], IR_fetch[20], IR_fetch[30:21], 1'b0}; // EXTRACT IMMEDIATE VALUE, SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER FOR JAL

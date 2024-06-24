@@ -8,8 +8,9 @@
 `define B_type 7'b1100011
 `define LUI 7'b0110111
 `define AUIPC 7'b0010111
-`define J_type 7'b1101111
-`define load 7'b0000011
+`define JAL 7'b1101111
+`define JALR 7'b1101111
+`define LOAD 7'b0000011
 
 /*
 R-type:  | funct7 | rs2 | rs1 | funct3 | rd | opcode |
@@ -29,8 +30,6 @@ module RISCV_Processor(
 reg [31:0] IR_fetch;
 reg [31:0] IR_decode;
 reg [31:0] IR_decode_pipelined; // pipelined to execute
-reg [31:0] IR_decode_pipelined_1; // pipelined to memory access
-reg [31:0] IR_decode_pipelined_2; // pipelined to writeback
 reg signed[31:0] execute;
 reg signed[32:0] execute_w_overflow;
 reg [31:0] write_back;
@@ -102,7 +101,8 @@ always@(posedge clk) begin
     if(read_flag == 1'b1) begin
         IR_fetch <= program_mem[PC << 2];
         IR_decode <= IR_fetch;
-        GPR[5] <= {{20{IR_fetch[31]}}, IR_fetch[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER
+        GPR[5] <= {{20{IR_fetch[31]}}, IR_fetch[31:20]}; // EXTRACT IMMEDIATE VALUE. SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER for I-type
+        GPR[6] <= {11{IR_fetch[31]}, IR_fetch[31], IR_fetch[19:12], IR_fetch[20], IR_fetch[30:21], 1'b0}; // EXTRACT IMMEDIATE VALUE, SIGN EXTEND TO 32 BITS, AND STORE IN TEMP REGISTER FOR JAL
     case(`opcode)
     IR_decode_pipelined <= IR_decode;
     `R_type: begin
@@ -277,10 +277,39 @@ always@(posedge clk) begin
         end
     end
     `LUI: begin
-        execute <= GPR[IR_decode[31:12]] << 12;
+        execute <= GPR[IR_decode[31:12]] << 12; // LUI
     end
     `AUIPC: begin
-        PC <= PC + (GPR[IR_decode[31:12]] << 12);
+        PC <= PC + (GPR[IR_decode[31:12]] << 12); // AUIPC
+    end
+    `JAL: begin
+        PC <= PC + GPR[6]; // JAL
+        execute <= PC + 4; // RETURN ADDRESS
+    end
+    `JALR: begin
+        PC <= GPR[IR_decode[19:15]] + {20{GPR[IR_decode[31]]}, GPR[IR_decode[31:20]]}; // JALR
+        execute <= PC + 4; // RETURN ADDRESS
+    end
+    `LOAD: begin
+        if(IR_decode[14:12] == 3b'000) begin
+            execute <= data_mem[GPR[IR_decode[19:15]] + {20{IR_decode[31]}, IR_decode[31:20]}][7:0]; // LB
+        end
+        else if(IR_decode[14:12] == 3b'001) begin
+            execute <= data_mem[GPR[IR_decode[19:15]] + {20{IR_decode[31]}, IR_decode[31:20]}][15:0]; // LH
+        end
+        else if(IR_decode[14:12] == 3b'010) begin
+            execute <= data_mem[GPR[IR_decode[19:15]] + {20{IR_decode[31]}, IR_decode[31:20]}][31:0]; // LW
+        end
+        else if(IR_decode[14:12] == 3b'100) begin
+            execute <= data_mem[GPR[IR_decode[19:15]] + {20'b0, $unsigned(IR_decode[31:20])}][7:0]; // LBU
+        end
+        else if(IR_decode[14:12] == 3b'101) begin
+            execute <= data_mem[GPR[IR_decode[19:15]] + {20'b0, $unsigned(IR_decode[31:20])}][15:0]; // LHU
+        end
+    end
+    endcase
+    case(`opcode_pl): begin
+        // write-back stage by writing execute to output regs
     end
     endcase
     end

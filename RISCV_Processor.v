@@ -51,6 +51,8 @@ generate
         always @(posedge clk) begin
             if(rst) begin
                 GPR[i] <= {32{1'b0}};
+                program_mem[i] <= <= {32{1'b0}};
+                data_mem[i] <= <= {32{1'b0}};
             end
         end
     end
@@ -74,11 +76,11 @@ always@(posedge clk) begin
         PC <= {8{1'b0}};
     end else begin
         if(read_flag == 1'b1) begin
-        if(count < 4) begin
-            count <= count + 1; // delay
+        if(count < 8b'00000100) begin
+            count <= count + 8b'00000001; // delay
         end else begin
-            count <= 0;
-            PC <= PC + 4;
+            count <= 8b'0000000000;
+            PC <= PC + 8b'00000100;
         end
     end
     end
@@ -309,7 +311,27 @@ always@(posedge clk) begin
     end
     endcase
     case(`opcode_pl): begin
-        // write-back stage by writing execute to output regs
+        `R_type: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `I_type: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `LUI: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `AUIPC: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `JAL: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `JALR: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
+        `LOAD: begin
+            GPR[IR_decode_pipelined[11:7]] <= execute;
+        end
     end
     endcase
     end

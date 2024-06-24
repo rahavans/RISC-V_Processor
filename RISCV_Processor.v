@@ -95,7 +95,7 @@ always@(posedge clk) begin
         execute_w_overflow <= {33{1'b0}};
         mem_access <= {32{1'b0}};
         write_back <= {32{1'b0}};
-        zero_flag <= 1'b0;
+        zero_flag <= 1'b1;
         negative_flag <= 1'b0;
         carry_flag <= 1'b0;
         overflow_flag <= 1'b0;

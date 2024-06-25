@@ -24,12 +24,12 @@ reg [31:0] IR_decode;
 reg [31:0] IR_decode_pl;
 reg [31:0] IR_decode_pl_1;
 reg [31:0] IR_decode_pl_2;
-reg signed[31:0] execute;
-reg signed[32:0] execute_w_overflow;
+
+reg signed[32:0] execute;
 reg [31:0] address;
 reg [31:0] address_pl;
 reg [31:0] address_pl_1;
-reg [31:0] write_back;
+reg signed [31:0] write_back;
 
 reg [31:0] program_mem [31:0];
 reg [31:0] data_mem [31:0];
@@ -39,12 +39,17 @@ reg [31:0] rs2;
 reg signed [31:0] imm;
 reg [31:0] rd;
 
-reg zero_flag;
-reg negative_flag;
-reg carry_flag;
-reg overflow_flag;
+wire zero_flag;
+wire negative_flag;
+wire carry_flag;
+wire overflow_flag;
 reg read_flag;
 reg branch_flag;
+
+assign zero_flag = (execute == 0);
+assign negative_flag = execute[31];
+assign carry_flag = (execute > 2147483647 || execute < -2147483648);
+assign overflow_flag = (execute[32] == 1'b1);
 
 reg [31:0] PC;
 genvar i;
@@ -66,7 +71,7 @@ always @(posedge clk) begin
         read_flag <= 1'b0;
     end else begin
         if(read_flag == 1'b0) begin
-        $readmemb("File path for a .mem file that contains 32 instructions", program_mem);
+        $readmemb("program.mem", program_mem);
         // using $readmemb only for proof of functionality, in reality, would need to connect external controller for synthesis purposes
         end
         read_flag <= 1'b1;
@@ -171,14 +176,9 @@ end
 
 always@(posedge clk) begin
     if(rst) begin
-        execute <= {32{1'b0}};
+        execute <= {33{1'b0}};
         address <= {32{1'b0}};
-        execute_w_overflow <= {33{1'b0}};
         IR_decode_pl <= {32{1'b0}};
-        zero_flag <= 1'b1;
-        negative_flag <= 1'b0;
-        carry_flag <= 1'b0;
-        overflow_flag <= 1'b0;
     end else begin
         if(read_flag == 1'b1) begin
             IR_decode_pl <= IR_decode;
@@ -186,143 +186,64 @@ always@(posedge clk) begin
         `R_type: begin
             address <= {32{1'b0}};
             if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0000000) begin
-                execute_w_overflow <= rs1 + rs2; // ADD
-                execute <= ((rs1 + rs2)[31:0]);
-                zero_flag <= ((rs1 + rs2) == 0) ? 1 : 0;
-                carry_flag <= (rs1 + rs2)[33];
-                negative_flag <= (rs1 + rs2)[32];
-                overflow_flag <= ((rs1[31] == rs2[31]) && ((rs1 + rs2)[31] != rs1[31]));
+                execute <= rs1 + rs2; // ADD
             end
             else if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0100000) begin
-                execute_w_overflow <= rs1 - rs2; // SUB
-                execute <= (rs1 - rs2)[31:0];
-                zero_flag <= ((rs1 - rs2) == 0);
-                carry_flag <= (rs1 - rs2)[33];
-                negative_flag <= (rs1 - rs2)[32];
-                overflow_flag <= ((rs1[31] == rs2[31]) && ((rs1 - rs2)[31] != rs1[31]));
+                execute <= rs1 - rs2; // SUB
             end
             else if(IR_decode[14:12] == 3'b100 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 ^ rs2; // XOR
-                zero_flag <= ((rs1 ^ rs2) == 0);
-                negative_flag <= (rs1 ^ rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b110 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 | rs2; // OR
-                zero_flag <= ((rs1 | rs2) == 0);
-                negative_flag <= (rs1 | rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b111 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 & rs2; // AND
-                zero_flag <= ((rs1 & rs2) == 0);
-                negative_flag <= (rs1 & rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b001 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 << rs2; // LEFT SHIFT
-                zero_flag <= ((rs1 << rs2) == 0);
-                negative_flag <= (rs1 << rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 >> rs2; // RIGHT SHIFT
-                zero_flag <= ((rs1 >> rs2) == 0);
-                negative_flag <= (rs1 >> rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0100000) begin
                 execute <= rs1 >>> rs2; // ARITHMETIC RIGHT SHIFT
-                zero_flag <= ((rs1 >>> rs2) == 0);
-                negative_flag <= (rs1 >>> rs2)[31];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b010 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= (rs1 < rs2) ? 1 : 0; // SLT
-                zero_flag <= (rs1 > rs2) ? 1 : 0;
-                negative_flag <= 1'b0;
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b011 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= ($unsigned(rs1) < $unsigned(rs2)) ? 1 : 0; // SLTU
-                zero_flag <= ($unsigned(rs1) > $unsigned(rs2)) ? 1 : 0;
-                negative_flag <= 1'b0;
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
         end
         `I_type: begin
             address <= {32{1'b0}};
             if(IR_decode[14:12] == 3'b000) begin
-                execute_w_overflow <= rs1 + imm; // ADDI
-                execute <= (rs1 + imm)[31:0];
-                zero_flag <= ((rs1 + imm) == 0);
-                carry_flag <= (rs1 + imm)[33];
-                negative_flag <= (rs1 + imm)[32];
-                overflow_flag <= ((rs1[31] == imm[31]) && ((rs1 + imm)[31] != rs1[31]));
+                execute <= rs1 + imm; // ADDI
             end
             else if(IR_decode[14:12] == 3'b100) begin
                 execute <= rs1 ^ imm; // XORI
-                zero_flag <= ((rs1 ^ imm) == 0);
-                negative_flag <= (rs1 ^ imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b110) begin
                 execute <= rs1 | imm; // ORI
-                zero_flag <= ((rs1 | imm) == 0);
-                negative_flag <= (rs1 | imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b111) begin
                 execute <= rs1 & imm; // ANDI
-                zero_flag <= ((rs1 & imm) == 0);
-                negative_flag <= (rs1 & imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b001 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 << imm; // SLLI
-                zero_flag <= ((rs1 << imm) == 0);
-                negative_flag <= (rs1 << imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0000000) begin
                 execute <= rs1 >> imm; // SRLI
-                zero_flag <= ((rs1 >> imm) == 0);
-                negative_flag <= (rs1 >> imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b101 && IR_decode[31:25] == 7'b0100000) begin
                 execute <= rs1 >>> imm; // SRAI
-                zero_flag <= ((rs1 >>> imm) == 0);
-                negative_flag <= (rs1 >>> imm)[32];
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b010) begin
                 execute <= (rs1 < imm) ? 1 : 0; // SLTI
-                zero_flag <= (rs1 > imm) ? 1 : 0;
-                negative_flag <= 1'b0;
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
             else if(IR_decode[14:12] == 3'b011) begin
                 execute <= ($unsigned(rs1) < $unsigned(imm)) ? 1 : 0; // SLTU
-                zero_flag <= ($unsigned(rs1) > $unsigned(imm)) ? 1 : 0;
-                negative_flag <= 1'b0;
-                carry_flag <= 1'b0;
-                overflow_flag <= 1'b0;
             end
         end
         `S_type: begin
@@ -382,10 +303,20 @@ always @(posedge clk) begin
             IR_decode_pl_1 <= IR_decode_pl;
             case(`opcode_pl_1)
                 `R_type: begin
-                    write_back <= execute;
+                    if(IR_decode_pl[14:12] == 3'b000 && IR_decode_pl[31:25] == 7'b0000000) begin
+                        write_back <= execute[31:0];
+                    end 
+                    else if(IR_decode_pl[14:12] == 3'b000 && IR_decode_pl[31:25] == 7'b0100000) begin
+                        write_back <= execute[31:0];
+                    end else begin
+                    write_back <= execute[31:0];
                     rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
+                end
                 `I_type: begin
+                    if(IR_decode_pl[14:12] == 3'b000) begin
+                        write_back <= execute[31:0];
+                    end
                     write_back <= execute;
                     rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end

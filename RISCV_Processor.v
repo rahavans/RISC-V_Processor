@@ -17,7 +17,7 @@
 module RISCV_Processor(
     input clk,
     input rst,
-    output signed reg [31:0] GPR [31:0]
+    output reg signed [31:0] GPR [31:0]
 );
 reg [31:0] IR_fetch;
 reg [31:0] IR_decode;
@@ -61,7 +61,7 @@ generate
     end
 endgenerate
 
-always(@posedge clk) begin
+always @(posedge clk) begin
     if(rst) begin
         read_flag <= 1'b0;
     end else begin
@@ -100,7 +100,7 @@ always@(posedge clk) begin
             if(!branch_flag) begin
         IR_fetch <= program_mem[PC >> 2];
             end else begin
-                IR_fetch <= 32'b0000000000000000000000000000110011;
+                IR_fetch <= 51;
         end
         if(program_mem[PC >> 2][6:0] == `B_type || program_mem[PC >> 2][6:0] == `JAL || program_mem[PC >> 2][6:0] == `JALR) begin
             branch_flag <= 1'b1;
@@ -152,17 +152,17 @@ always@(posedge clk) begin
     `JAL: begin
         rs1 <= {32{1'b0}};
         rs2 <= {32{1'b0}};
-        imm <= {11{IR_fetch[31]}, IR_fetch[31], IR_fetch[19:12], IR_fetch[20], IR_fetch[30:21], 1'b0};
+        imm <= {{11{IR_fetch[31]}}, IR_fetch[31], IR_fetch[19:12], IR_fetch[20], IR_fetch[30:21], 1'b0};
     end
     `JALR: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= {32{1'b0}};
-        imm <= {20{GPR[IR_fetch[31]]}, GPR[IR_fetch[31:20]]};
+        imm <= {{20{GPR[IR_fetch[31]]}}, GPR[IR_fetch[31:20]]};
     end
     `LOAD: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= {32{1'b0}};
-        imm <= {20{IR_fetch[31]}, IR_fetch[31:20]};
+        imm <= {{20{IR_fetch[31]}}, IR_fetch[31:20]};
     end
     endcase
     end
@@ -187,8 +187,8 @@ always@(posedge clk) begin
             address <= {32{1'b0}};
             if(IR_decode[14:12] == 3'b000 && IR_decode[31:25] == 7'b0000000) begin
                 execute_w_overflow <= rs1 + rs2; // ADD
-                execute <= (rs1 + rs2)[31:0];
-                zero_flag <= ((rs1 + rs2) == 0);
+                execute <= ((rs1 + rs2)[31:0]);
+                zero_flag <= ((rs1 + rs2) == 0) ? 1 : 0;
                 carry_flag <= (rs1 + rs2)[33];
                 negative_flag <= (rs1 + rs2)[32];
                 overflow_flag <= ((rs1[31] == rs2[31]) && ((rs1 + rs2)[31] != rs1[31]));
@@ -380,14 +380,14 @@ always @(posedge clk) begin
         end else begin
         if(read_flag == 1'b1) begin
             IR_decode_pl_1 <= IR_decode_pl;
-            case(`opcode_pl_1) begin
+            case(`opcode_pl_1)
                 `R_type: begin
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `I_type: begin
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `S_type: begin
                     if(IR_decode_pl[14:12] == 3'b000) begin
@@ -406,45 +406,44 @@ always @(posedge clk) begin
                 end
                 `LUI: begin
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `AUIPC: begin
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `JAL: begin
                     address_pl <= address;
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `JALR: begin
                     address_pl <= address;
                     write_back <= execute;
-                    rd <= {27'b0, IR_decode_pl[11:7]};
+                    rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `LOAD: begin
                     if(IR_decode_pl[14:12] == 3'b000) begin
                         write_back <= data_mem[address][7:0]; // LB
-                        rd <= {27'b0, IR_decode_pl[11:7]};
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b001) begin
                         write_back <= data_mem[address][15:0]; // LH
-                        rd <= {27'b0, IR_decode_pl[11:7]};
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b010) begin
-                        write_back <= data_mem[address][31:0] // LW
-                        rd <= {27'b0, IR_decode_pl[11:7]};
+                        write_back <= data_mem[address][31:0]; // LW
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b100) begin
                         write_back <= {24'b0, data_mem[address][7:0]}; // LBU
-                        rd <= {27'b0, IR_decode_pl[11:7]};
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b100) begin
                         write_back <= {16'b0, data_mem[address][15:0]}; // LHU
-                        rd <= {27'b0, IR_decode_pl[11:7]};
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                 end
-            end
             endcase
         end
     end
@@ -458,7 +457,7 @@ always @(posedge clk) begin
         if(read_flag == 1'b1) begin
         address_pl_1 <= address_pl;
         IR_decode_pl_2 <= IR_decode_pl_1;
-        case(`opcode_pl_2) begin
+        case(`opcode_pl_2)
             `R_type: begin
                 GPR[rd] <= write_back;
             end
@@ -485,9 +484,8 @@ always @(posedge clk) begin
             `AUIPC: begin
                 GPR[rd] <= write_back;
             end
-        end
         endcase
+        end
     end
     end
-end
 endmodule

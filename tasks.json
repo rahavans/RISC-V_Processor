@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile Verilog",
+            "type": "shell",
+            "command": "iverilog",
+            "args": ["-o", "RISCV_Processor.vvp", "RISCV_Processor.v"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$iverilog"
+        },
+        {
+            "label": "Run Simulation",
+            "type": "shell",
+            "command": "vvp",
+            "args": ["RISCV_Processor.vvp"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "dependsOn": "Compile Verilog"
+        }
+    ]
+}

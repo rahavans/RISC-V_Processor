@@ -4,7 +4,7 @@ Hi! I'm designing a custom processor in preparation for my Computer Architecture
 
 I will get into my decisions as for why I incorporated certain features to design a custom processor, rather than a traditional RISC-V Processor, but closely retained most key elements. 
 
-ISA: I opted to use the RV32I ISA because of its simplicity, and range of instructions since it covers the fundamental instructions offered in RISC-V. Given that this project aims to deepen my understanding of the inner workings of a processor, RV32I ISA provides the correct balance of instructional value and accessibility.
+Insturction Set: I opted to use the RV32I Instruction Set because of its simplicity, and range of instructions since it covers the fundamental instructions offered in RISC-V. Given that this project aims to deepen my understanding of the inner workings of a processor, RV32I provides the correct balance of instructional value and accessibility. The Instruction Set can be found here: https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
 
 Pipeline Stages: I developed a 5-stage pipeline to fetch instructions, decode them, complete arithmetic and logical operations in the ALU for execution, accessed memory if required, and a final write-back stage to the general-purpose registers. This suggested higher overall throughput due to its pipelined nature, allowing for more instructions to be processed over time.
 

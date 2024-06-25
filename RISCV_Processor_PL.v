@@ -14,15 +14,6 @@
 `define JALR 7'b1100111
 `define LOAD 7'b0000011
 
-/*
-R-type:  | funct7 | rs2 | rs1 | funct3 | rd | opcode |
-I-type:  | imm[11:0] | rs1 | funct3 | rd | opcode |
-S-type:  | imm[11:5] | rs2 | rs1 | funct3 | imm[4:0] | opcode |
-B-type:  | imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |
-U-type:  | imm[31:12] | rd | opcode |
-J-type:  | imm[20|10:1|11|19:12] | rd | opcode |
-*/
-
 module RISCV_Processor(
     input clk,
     input rst,
@@ -30,7 +21,7 @@ module RISCV_Processor(
 );
 reg [31:0] IR_fetch;
 reg [31:0] IR_decode;
-reg [31:0] IR_decode_pl; // pipelined to execute
+reg [31:0] IR_decode_pl;
 reg [31:0] IR_decode_pl_1;
 reg [31:0] IR_decode_pl_2;
 reg signed[31:0] execute;

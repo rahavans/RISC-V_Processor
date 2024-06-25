@@ -44,8 +44,8 @@ reg negative_flag;
 reg carry_flag;
 reg overflow_flag;
 reg read_flag;
+reg branch_flag;
 
-reg [2:0] count;
 reg [31:0] PC;
 genvar i;
 
@@ -75,23 +75,21 @@ end
 
 always@(posedge clk) begin
     if(rst) begin
-        count <= {3{1'b0}};
         PC <= {32{1'b0}};
+        branch_flag <= 1'b0;
     end else begin
         if(read_flag == 1'b1) begin
-        if(count < 3'b100) begin
-            count <= count + 3'b001; // delay
-        end else begin
-            count <= 3'b000;
             if(IR_decode_pl_2[6:0] == `B_type || IR_decode_pl_2[6:0] == `JAL || IR_decode_pl_2[6:0] == `JALR) begin
                 PC <= address_pl_1;
                 address_pl_1 <= {32{1'b0}};
             end else begin
-                PC <= PC + 4;
+                if(branch_flag == 1'b1) begin
+                    PC <= PC;
+                end
+                    PC <= PC + 4;
             end
         end
     end
-end
 end
 
 always@(posedge clk) begin
@@ -99,9 +97,16 @@ always@(posedge clk) begin
         IR_fetch <= {32{1'b0}};
     end else begin
         if(read_flag == 1'b1) begin
+            if(!branch_flag) begin
         IR_fetch <= program_mem[PC >> 2];
+            end else begin
+                IR_fetch <= 32'b0000000000000000000000000000110011;
+        end
+        if(program_mem[PC >> 2][6:0] == `B_type || program_mem[PC >> 2][6:0] == `JAL || program_mem[PC >> 2][6:0] == `JALR) begin
+            branch_flag <= 1'b1;
         end
     end
+end
 end
 
 always@(posedge clk) begin
@@ -122,7 +127,7 @@ always@(posedge clk) begin
     `I_type: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= {32{1'b0}};
-        imm <= {{20{IR_fetch[31]}}, IR_fetch[31:20]}
+        imm <= {{20{IR_fetch[31]}}, IR_fetch[31:20]};
     end
     `S_type: begin
         rs1 <= GPR[IR_fetch[19:15]];
@@ -460,14 +465,19 @@ always @(posedge clk) begin
             `I_type: begin
                 GPR[rd] <= write_back;
             end
+            `B_type: begin
+                branch_flag <= 1'b0;
+            end
             `LOAD: begin
                 GPR[rd] <= write_back;
             end
             `JAL: begin
                 GPR[rd] <= write_back;
+                branch_flag <= 1'b0;
             end
             `JALR: begin
                 GPR[rd] <= write_back;
+                branch_flag <= 1'b0;
             end
             `LUI: begin
                 GPR[rd] <= write_back;

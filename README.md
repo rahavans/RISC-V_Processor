@@ -6,7 +6,7 @@ I will get into my decisions as for why I incorporated certain features to desig
 
 Insturction Set: I opted to use the RV32I Instruction Set because of its simplicity, and range of instructions since it covers the fundamental instructions offered in RISC-V. Given that this project aims to deepen my understanding of the inner workings of a processor, RV32I provides the correct balance of instructional value and accessibility. The Instruction Set can be found here: https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
 
-Pipeline Stages: I developed a 5-stage pipeline to fetch instructions, decode them, complete arithmetic and logical operations in the ALU for execution, accessed memory if required, and a final write-back stage to the general-purpose registers. This suggested higher overall throughput due to its pipelined nature, allowing for more instructions to be processed over time.
+Pipeline Stages: I developed a 5-stage pipeline to fetch instructions, decode them and extract their values, execute arithmetic and logical operations in the ALU, access memory if required, and complete a final write-back stage of the computations from the ALU or memory to the general-purpose registers. This suggested higher overall throughput due to its pipelined nature, allowing for more instructions to be processed over time.
 
 Signed vs Unsigned: I chose to use signed arithmetic for the most part since RV32I offered some unsigned operations, so the general arithemtic and logical operations should opt to use signed arithmetic instead. 
 

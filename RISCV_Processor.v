@@ -17,7 +17,7 @@
 module RISCV_Processor(
     input clk,
     input rst,
-    output reg signed [31:0] GPR [31:0]
+    output reg signed [31:0] GPR [0:31]
 );
 reg [31:0] IR_fetch;
 reg [31:0] IR_decode;
@@ -71,7 +71,7 @@ always @(posedge clk) begin
         read_flag <= 1'b0;
     end else begin
         if(read_flag == 1'b0) begin
-        $readmemb("program.mem", program_mem);
+        $readmemb("program.mem", program_mem, 0, 31);
         // using $readmemb only for proof of functionality, in reality, would need to connect external controller for synthesis purposes
         end
         read_flag <= 1'b1;
@@ -90,8 +90,9 @@ always@(posedge clk) begin
             end else begin
                 if(branch_flag == 1'b1) begin
                     PC <= PC;
-                end
+                end else begin
                     PC <= PC + 4;
+                end 
             end
         end
     end
@@ -102,8 +103,8 @@ always@(posedge clk) begin
         IR_fetch <= {32{1'b0}};
     end else begin
         if(read_flag == 1'b1) begin
-            if(!branch_flag) begin
-        IR_fetch <= program_mem[PC >> 2];
+            if(branch_flag == 1'b0) begin
+                IR_fetch <= program_mem[PC >> 2];
             end else begin
                 IR_fetch <= 51;
         end
@@ -142,17 +143,17 @@ always@(posedge clk) begin
     `B_type: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= GPR[IR_fetch[24:20]];
-        imm <= {20'b0, GPR[IR_fetch[31:25]], GPR[IR_fetch[11:7]]};
+        imm <= {20'b0, IR_fetch[31:25], IR_fetch[11:7]};
     end
     `LUI: begin
         rs1 <= {32{1'b0}};
         rs2 <= {32{1'b0}};
-        imm <= GPR[IR_fetch[31:12]];
+        imm <= {12'b0, IR_fetch[31:12]};
     end
     `AUIPC: begin
         rs1 <= {32{1'b0}};
         rs2 <= {32{1'b0}};
-        imm <= GPR[IR_fetch[31:12]];
+        imm <= {12'b0, IR_fetch[31:12]};
     end
     `JAL: begin
         rs1 <= {32{1'b0}};

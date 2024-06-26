@@ -138,22 +138,22 @@ always@(posedge clk) begin
     `S_type: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= GPR[IR_fetch[24:20]];
-        imm <= {20'b0, GPR[IR_fetch[31:25]], GPR[IR_fetch[11:7]]};
+        imm <= {{20{IR_fetch[31]}}, GPR[IR_fetch[31:25]], GPR[IR_fetch[11:7]]};
     end
     `B_type: begin
         rs1 <= GPR[IR_fetch[19:15]];
         rs2 <= GPR[IR_fetch[24:20]];
-        imm <= {20'b0, IR_fetch[31:25], IR_fetch[11:7]};
+        imm <= {{20{IR_fetch[31]}}, IR_fetch[31], IR_fetch[7], IR_fetch[31:25], IR_fetch[11:8]};
     end
     `LUI: begin
         rs1 <= {32{1'b0}};
         rs2 <= {32{1'b0}};
-        imm <= {12'b0, IR_fetch[31:12]};
+        imm <= {{12{IR_fetch[31]}}, IR_fetch[31:12]};
     end
     `AUIPC: begin
         rs1 <= {32{1'b0}};
         rs2 <= {32{1'b0}};
-        imm <= {12'b0, IR_fetch[31:12]};
+        imm <= {{12{IR_fetch[31]}}, IR_fetch[31:12]};
     end
     `JAL: begin
         rs1 <= {32{1'b0}};

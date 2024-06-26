@@ -35,6 +35,8 @@ module testbench;
     always @(posedge clk) begin
         if (rst == 0 && dut.read_flag == 1'b1) begin
             // Display PC, instruction, and GPR content
+            $display("PC = %d, Instruction = %b, rs1 = %b, rs2 = %b, out = %b, rd = %d", dut.PC, dut.IR_fetch, dut.rs1, dut.execute, dut.write_back, dut.rd);
+            $display("%d %d %d", dut.GPR[1], dut.GPR[2], dut.GPR[3]);
             i++;
         end
     end

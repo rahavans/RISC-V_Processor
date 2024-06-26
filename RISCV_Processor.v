@@ -361,11 +361,11 @@ always @(posedge clk) begin
                 end
                 `LOAD: begin
                     if(IR_decode_pl[14:12] == 3'b000) begin
-                        write_back <= data_mem[address][7:0]; // LB
+                        write_back <= {{24{data_mem[address][7]}}, data_mem[address][7:0]}; // LB
                         rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b001) begin
-                        write_back <= data_mem[address][15:0]; // LH
+                        write_back <= {{16{data_mem[address][15]}}, data_mem[address][15:0]}; // LH
                         rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
                     else if(IR_decode_pl[14:12] == 3'b010) begin

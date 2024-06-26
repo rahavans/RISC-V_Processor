@@ -16,4 +16,4 @@ Decoding Process: As per RV32I guidelines, the approporiate source registers, im
 
 Hazard Handling: This was a major challenge I faced. The key instances where I had to handle data hazards was during branching using the program counter, and subsequent instruction usage in the pipeline. I chose to avoid subsequent usage in the pipeline during testing by sending NOPs as a temporary solution, however, during branching, I set a flag that generates NOP instructions while a branch instruction is being completed, to avoid the program counter from being altered. This way, the correct instruction is fetched next. This method of stalling does compromise throughput, however, at this point, I would suggest that hazard handling for subsequent instruction usage and possible data forwarding would be a next step improvement for this project. 
 
-Next Steps: Developing testbenches!
+Next Steps: Developing testbenches and testing!

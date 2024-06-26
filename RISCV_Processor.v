@@ -3,7 +3,7 @@
 `define opcode IR_fetch[6:0]
 `define opcode_pl IR_decode[6:0]
 `define opcode_pl_1 IR_decode_pl[6:0]
-`define opcode_pl_2 IR_decode_pl_1 [6:0]
+`define opcode_pl_2 IR_decode_pl_1[6:0]
 `define R_type 7'b0110011 
 `define I_type 7'b0010011
 `define S_type 7'b0100011
@@ -123,15 +123,15 @@ always@(posedge clk) begin
         imm <= {32{1'b0}};
     end else begin
         if(read_flag == 1'b1) begin
-        IR_decode <= IR_fetch;
+            IR_decode <= IR_fetch;
     case(`opcode)
     `R_type: begin
-        rs1 <= GPR[IR_fetch[19:15]];
-        rs2 <= GPR[IR_fetch[24:20]];
+        rs1 <= GPR[{{20{1'b0}}, IR_fetch[19:15]}];
+        rs2 <= GPR[{{20{1'b0}}, IR_fetch[24:20]}];
         imm <= {32{1'b0}};
     end
     `I_type: begin
-        rs1 <= GPR[IR_fetch[19:15]];
+        rs1 <= GPR[{{27{1'b0}}, IR_fetch[19:15]}];
         rs2 <= {32{1'b0}};
         imm <= {{20{IR_fetch[31]}}, IR_fetch[31:20]};
     end
@@ -306,9 +306,11 @@ always @(posedge clk) begin
                 `R_type: begin
                     if(IR_decode_pl[14:12] == 3'b000 && IR_decode_pl[31:25] == 7'b0000000) begin
                         write_back <= execute[31:0];
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end 
                     else if(IR_decode_pl[14:12] == 3'b000 && IR_decode_pl[31:25] == 7'b0100000) begin
                         write_back <= execute[31:0];
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end else begin
                     write_back <= execute[31:0];
                     rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
@@ -317,8 +319,11 @@ always @(posedge clk) begin
                 `I_type: begin
                     if(IR_decode_pl[14:12] == 3'b000) begin
                         write_back <= execute[31:0];
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
+                    end else begin
+                        write_back <= execute;
+                        rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                     end
-                    write_back <= execute;
                     rd <= {{27{1'b0}}, IR_decode_pl[11:7]};
                 end
                 `S_type: begin

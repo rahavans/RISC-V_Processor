@@ -34,8 +34,8 @@ reg signed [31:0] write_back;
 reg [31:0] program_mem [31:0];
 reg [31:0] data_mem [31:0];
 
-reg [31:0] rs1;
-reg [31:0] rs2;
+reg signed [31:0] rs1;
+reg signed [31:0] rs2;
 reg signed [31:0] imm;
 reg [31:0] rd;
 

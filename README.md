@@ -16,4 +16,10 @@ Decoding Process: As per RV32I guidelines, the approporiate source registers, im
 
 Hazard Handling: This was a major challenge I faced. The key instances where I had to handle data hazards was during branching using the program counter, and subsequent instruction usage in the pipeline. I chose to avoid subsequent usage in the pipeline during testing by sending NOPs in my test cases as a temporary solution, however, during branching, I set a flag that generates NOP instructions while a branch instruction is being completed, to avoid the program counter from being altered. This way, the correct instruction is fetched next. This method of stalling does compromise throughput, however, at this point, I would suggest that hazard handling for subsequent instruction usage and possible data forwarding would be a next step improvement for this project. As for subsequent instructions, using this same flagging technique is possible, however, that would definitely be a challenge I will tackle in a newer iteration of this project. 
 
+Compiling: I used the Icarus Verilog HDL compiler with SystemVerilog 2012 standards to support the general purpose register set initialization. Ths shell command is as follows:
+
+iverilog -g 2012 tb_processor.v RISCV_Processor.v
+
+Then, the testbench's output can be seen simply by running ./a.out in the command shell
+
 Next Steps: Developing testbenches and testing!
